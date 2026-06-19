@@ -7,7 +7,7 @@ app = typer.Typer(
     add_completion=False,
 )
 
-app.add_typer(init.app, name="init")
+app.command(name="init")(init.run)
 app.command(name="ask")(ask.run)
 app.command(name="do")(do.run)
 app.command(name="why")(why.run)

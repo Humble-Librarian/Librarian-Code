@@ -1,11 +1,7 @@
-import json
 import os
 from pathlib import Path
-import typer
 from librarian.utils.ui import print_header, print_success, print_warning, print_muted
 from librarian.memory.indexer import index_project
-
-app = typer.Typer()
 
 
 def _detect_languages() -> list[str]:
