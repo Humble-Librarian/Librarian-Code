@@ -1,5 +1,6 @@
 import json
 import re
+import shutil
 from pathlib import Path
 from librarian.utils.ui import (
     print_header, print_warning, print_success, print_muted,
@@ -23,7 +24,7 @@ DO_SYSTEM_PROMPT = """You are Librarian, a CLI coding agent. When given a task, 
       "type": "edit_file",
       "file": "path/to/file.py",
       "description": "what this edit does",
-      "old_code": "exact string to find",
+      "old_code": "exact string to find (must exist in the file)",
       "new_code": "replacement string"
     },
     {
@@ -31,6 +32,11 @@ DO_SYSTEM_PROMPT = """You are Librarian, a CLI coding agent. When given a task, 
       "file": "path/to/new_file.py",
       "description": "what this file does",
       "content": "full file content"
+    },
+    {
+      "type": "delete_file",
+      "file": "path/to/file_or_folder",
+      "description": "what is being deleted and why"
     },
     {
       "type": "shell_command",
@@ -41,10 +47,11 @@ DO_SYSTEM_PROMPT = """You are Librarian, a CLI coding agent. When given a task, 
 }
 
 Rules:
-- Only use edit_file when modifying existing code
+- Only use edit_file when modifying existing code — read the actual file content first before editing
+- old_code in edit_file must be the EXACT string from the file, including whitespace
 - Use create_file for new files
+- Use delete_file to remove files or entire folders
 - Use shell_command for terminal commands
-- old_code in edit_file must be unique within the file
 - Return ONLY the JSON, no markdown fences, no explanation
 """
 
@@ -92,9 +99,30 @@ def _execute_action(action: dict) -> dict:
     elif action_type == "create_file":
         write_file(action["file"], action["content"])
         return {"type": "create_file", "file": action["file"], "status": "done"}
+    elif action_type == "delete_file":
+        target = Path(action["file"])
+        if target.is_dir():
+            shutil.rmtree(target)
+        elif target.is_file():
+            target.unlink()
+        else:
+            raise FileNotFoundError(f"Not found: {action['file']}")
+        return {"type": "delete_file", "file": action["file"], "status": "done"}
     elif action_type == "shell_command":
-        code, out, err = run_command(action["command"])
-        return {"type": "shell_command", "command": action["command"], "status": "done" if code == 0 else f"exit {code}"}
+        cmd = action["command"]
+        if cmd.strip().startswith("rm "):
+            import re as _re
+            paths = _re.findall(r"(?:^|\s)(\S+)", cmd.replace("rm ", "", 1))
+            for p in paths:
+                p = p.strip("-rf").strip()
+                target = Path(p)
+                if target.is_dir():
+                    shutil.rmtree(target)
+                elif target.is_file():
+                    target.unlink()
+            return {"type": "shell_command", "command": cmd, "status": "done"}
+        code, out, err = run_command(cmd)
+        return {"type": "shell_command", "command": cmd, "status": "done" if code == 0 else f"exit {code}"}
     return {"type": action_type, "status": "unknown"}
 
 
@@ -131,7 +159,10 @@ def run(task: str):
     results = []
     files_changed = []
     for action in plan.get("actions", []):
-        risk = classify_action(action.get("description", "") + " " + action.get("command", ""))
+        risk_text = action.get("description", "") + " " + action.get("command", "") + " " + action.get("file", "")
+        if action.get("type") in ("delete_file",):
+            risk_text += " delete"
+        risk = classify_action(risk_text)
         if risk == RiskLevel.CONFIRM:
             if not confirm_action(f"execute: {action.get('description', '?')}"):
                 print_muted(f"  skipped: {action.get('description', '?')}")
