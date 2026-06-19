@@ -32,10 +32,12 @@ def index_project():
     existing_ids = set(existing["ids"]) if existing["ids"] else set()
 
     to_add = []
-    for chunk in all_chunks:
-        chunk_id = f"{chunk['metadata']['file_path']}:{chunk['metadata']['start_line']}"
-        if chunk_id in existing_ids:
+    seen_ids = set()
+    for idx, chunk in enumerate(all_chunks):
+        chunk_id = f"{chunk['metadata']['file_path']}:{chunk['metadata']['start_line']}:{idx}"
+        if chunk_id in existing_ids or chunk_id in seen_ids:
             continue
+        seen_ids.add(chunk_id)
         to_add.append((chunk_id, chunk))
 
     with spinner("indexing files...") as prog:

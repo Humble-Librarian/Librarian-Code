@@ -23,7 +23,7 @@ def retrieve(query: str, n_results: int = 5) -> list[dict]:
         results["metadatas"][0],
         results["distances"][0],
     ):
-        if dist > 0.8:
+        if dist > 2.0:
             continue
         chunks.append({
             "content": doc,
