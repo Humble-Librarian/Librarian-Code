@@ -27,9 +27,10 @@ class OpenRouterAdapter(LLMAdapter):
                 {"role": "user", "content": prompt},
             ],
             "temperature": 0.2,
+            "max_tokens": 4096,
         }
         try:
-            with httpx.Client(timeout=30) as client:
+            with httpx.Client(timeout=60) as client:
                 resp = client.post(ENDPOINT, headers=headers, json=payload)
             if resp.status_code == 429:
                 raise RateLimitError("OpenRouter rate limit exceeded")

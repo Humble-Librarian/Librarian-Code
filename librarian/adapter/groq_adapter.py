@@ -21,6 +21,7 @@ class GroqAdapter(LLMAdapter):
                     {"role": "user", "content": prompt},
                 ],
                 temperature=0.2,
+                max_tokens=4096,
             )
             self.tokens_used += response.usage.total_tokens
             return response.choices[0].message.content
