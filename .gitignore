@@ -1,5 +1,6 @@
 .env
 .librarian/
+LIBRARIAN.md
 __pycache__/
 *.pyc
 *.pyo
