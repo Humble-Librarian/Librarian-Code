@@ -1,3 +1,5 @@
+import sys
+import io
 import pyfiglet
 from rich.console import Console
 from rich.panel import Panel
@@ -5,7 +7,8 @@ from rich.table import Table
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.prompt import Confirm
 
-console = Console()
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
+console = Console(force_terminal=True)
 
 INDIGO = "#6366F1"
 VIOLET = "#8B5CF6"
