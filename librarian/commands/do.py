@@ -50,6 +50,8 @@ def _parse_plan(raw: str) -> dict:
         raw = re.sub(r"^```(?:json)?\n?", "", raw)
         raw = re.sub(r"\n?```$", "", raw)
 
+    raw = raw.replace("\\'", "'")
+
     try:
         return json.loads(raw)
     except json.JSONDecodeError:
