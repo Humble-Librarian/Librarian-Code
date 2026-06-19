@@ -19,7 +19,7 @@ ERROR = "#EF4444"
 
 
 def print_banner():
-    ascii_art = pyfiglet.figlet_format("librarian", font="slant")
+    ascii_art = pyfiglet.figlet_format("librarian", font="block")
     console.print(f"[bold {INDIGO}]{ascii_art}[/bold {INDIGO}]")
     console.print(f"[{MUTED}]  a CLI coding agent with persistent project memory[/{MUTED}]\n")
 
