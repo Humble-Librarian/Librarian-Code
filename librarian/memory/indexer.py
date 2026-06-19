@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from pathlib import Path
 from sentence_transformers import SentenceTransformer
 import chromadb
@@ -17,10 +18,18 @@ CHUNK_EXTENSIONS = [
 META_FILE = ".librarian/index_meta.json"
 
 
+def _sanitize_collection_name(name: str) -> str:
+    name = re.sub(r"[^a-zA-Z0-9_\-\.\s]", "", name)
+    name = re.sub(r"\s+", "_", name).strip("_")
+    if len(name) < 3:
+        name = f"project_{name}" if name else "project"
+    return name[:512]
+
+
 def index_project():
     model = SentenceTransformer(EMBED_MODEL)
     client = chromadb.PersistentClient(path=CHROMA_PERSIST_DIR)
-    project_name = os.path.basename(os.getcwd())
+    project_name = _sanitize_collection_name(os.path.basename(os.getcwd()))
     collection = client.get_or_create_collection(name=project_name)
 
     files = list_files(".", CHUNK_EXTENSIONS)

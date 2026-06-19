@@ -64,6 +64,13 @@ def _generate_librarian_md(languages: list[str], package_manager: str):
 def run():
     print_header("initialising project")
 
+    cwd = os.getcwd()
+    basename = os.path.basename(cwd)
+    if not basename or len(basename) < 2:
+        print_warning("cannot initialise from a root or drive directory")
+        print_muted("  cd into your project folder first, then run: librarian init")
+        return
+
     librarian_dir = Path(".librarian")
     if librarian_dir.exists():
         print_warning(".librarian/ already exists — re-indexing")
