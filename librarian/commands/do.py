@@ -35,13 +35,12 @@ RESPONSE FORMAT:
 {"reasoning":"approach","actions":[...]}
 
 RULES:
-- content in create_file MUST be the complete, working file — not a snippet
-- For web projects (HTML/CSS/JS): prefer a single index.html with inline <style> and <script> to avoid truncation
-- If you must use separate files, create them as separate actions
-- old_code in edit_file must match the file EXACTLY including whitespace
-- Return ONLY valid JSON — no markdown fences, no explanation, no comments
-- Keep file contents under 200 lines each to avoid truncation
-- Do NOT wrap content in markdown code blocks inside the JSON
+- content in create_file MUST be the complete, working, FULL file — never a stub, placeholder, or comment
+- NEVER generate content like "// add code here" or empty tags — always write real, functional code
+- For web projects (HTML/CSS/JS): prefer a single index.html with inline <style> and <script>
+- old_code in edit_file must match the file EXACTLY including whitespace — if unsure, use create_file instead
+- Return ONLY valid JSON — no markdown fences, no explanation
+- Keep file contents under 200 lines to avoid truncation
 """
 
 
@@ -97,9 +96,20 @@ def _show_plan(plan: dict, task: str):
 def _execute_action(action: dict) -> dict:
     action_type = action.get("type")
     if action_type == "edit_file":
+        path = Path(action["file"])
+        if not path.exists():
+            raise FileNotFoundError(f"File not found: {action['file']}")
+        content = read_file(action["file"])
+        if action["old_code"] not in content:
+            raise ValueError(f"old_code not found in {action['file']} — file may have changed")
         edit_file(action["file"], action["old_code"], action["new_code"])
         return {"type": "edit_file", "file": action["file"], "status": "done"}
     elif action_type == "create_file":
+        path = Path(action["file"])
+        if path.exists() and path.stat().st_size > 0:
+            content = action.get("content", "")
+            if not content or len(content.strip()) < 20:
+                raise ValueError(f"Refusing to overwrite {action['file']} with empty/stub content")
         write_file(action["file"], action["content"])
         return {"type": "create_file", "file": action["file"], "status": "done"}
     elif action_type == "delete_file":
