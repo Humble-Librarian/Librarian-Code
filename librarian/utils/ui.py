@@ -6,6 +6,8 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.prompt import Confirm
+from rich.columns import Columns
+from rich.text import Text
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 console = Console(force_terminal=True)
@@ -16,12 +18,45 @@ MUTED = "#6B7280"
 SUCCESS = "#10B981"
 WARNING = "#F59E0B"
 ERROR = "#EF4444"
+CYAN = "#06B6D4"
+PINK = "#EC4899"
 
 
 def print_banner():
-    ascii_art = pyfiglet.figlet_format("librarian", font="block")
-    console.print(f"[bold {INDIGO}]{ascii_art}[/bold {INDIGO}]")
-    console.print(f"[{MUTED}]  a CLI coding agent with persistent project memory[/{MUTED}]\n")
+    ascii_art = pyfiglet.figlet_format("librarian", font="colossal")
+    styled_art = Text(ascii_art, style=f"bold {INDIGO}")
+    tagline = Text("  a CLI coding agent with persistent project memory", style=f"italic {MUTED}")
+
+    commands = Table(show_header=False, box=None, padding=(0, 2))
+    commands.add_column(style=f"bold {CYAN}")
+    commands.add_column(style=MUTED)
+    commands.add_row("init", "index your project")
+    commands.add_row("ask", "question your codebase")
+    commands.add_row("do", "execute a task")
+    commands.add_row("why", "see decision history")
+    commands.add_row("undo", "revert last action")
+    commands.add_row("status", "project overview")
+
+    banner_content = Text()
+    banner_content.append_text(styled_art)
+    banner_content.append_text(tagline)
+
+    panel = Panel(
+        banner_content,
+        border_style=INDIGO,
+        padding=(1, 2),
+    )
+    console.print()
+    console.print(panel)
+
+    cmd_panel = Panel(
+        commands,
+        title=f"[bold {VIOLET}]commands[/bold {VIOLET}]",
+        border_style=VIOLET,
+        padding=(0, 1),
+    )
+    console.print(cmd_panel)
+    console.print()
 
 
 def print_header(title: str):

@@ -13,8 +13,6 @@ app = typer.Typer(
 def main(ctx: typer.Context):
     if ctx.invoked_subcommand is None:
         print_banner()
-        print_muted("  commands: init | ask | do | why | undo | status")
-        print_muted("  run: librarian --help\n")
 
 
 app.command(name="init")(init.run)
