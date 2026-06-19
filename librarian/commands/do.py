@@ -14,6 +14,7 @@ from librarian.memory import capsule, decision_log
 from librarian.actions.file_ops import read_file, write_file, edit_file
 from librarian.actions.shell_ops import run_command
 from librarian.actions.safety import classify_action, RiskLevel
+from librarian.skills.loader import build_skill_context
 
 DO_SYSTEM_PROMPT = """You are Librarian, a CLI coding agent. Respond ONLY with a JSON plan.
 
@@ -151,8 +152,11 @@ def run(task: str):
 
     chunks = retrieve(task, n_results=7)
     conventions = read_librarian_md()
+    skill_ctx = build_skill_context()
 
     parts = [f"Project conventions:\n{conventions}"]
+    if skill_ctx:
+        parts.append(f"Domain best practices:\n{skill_ctx}")
     if chunks:
         context = _format_chunks(chunks)
         parts.append(f"Relevant code:\n{context}")

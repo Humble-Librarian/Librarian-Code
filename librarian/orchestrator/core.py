@@ -1,22 +1,25 @@
 from pathlib import Path
 from librarian.orchestrator.router import get_response
 from librarian.memory.retriever import retrieve
+from librarian.skills.loader import build_skill_context
 
 
-def build_system_prompt(project_conventions: str) -> str:
-    return f"""You are Librarian, a CLI coding agent with memory of this project.
-
-Project conventions:
-{project_conventions}
-
-Rules:
+def build_system_prompt(project_conventions: str, skill_context: str = "") -> str:
+    parts = [
+        "You are Librarian, a CLI coding agent with memory of this project.",
+        f"Project conventions:\n{project_conventions}",
+    ]
+    if skill_context:
+        parts.append(f"Domain-specific best practices:\n{skill_context}")
+    parts.append("""Rules:
 - Always explain what you are about to do before doing it
 - Never delete files without explicit confirmation
 - Prefer editing existing code over rewriting from scratch
 - When uncertain, ask rather than assume
 - Be concise and direct in your answers
 - Cite source files when referencing code (e.g. "in auth.py line 42")
-"""
+""")
+    return "\n\n".join(parts)
 
 
 def read_librarian_md() -> str:
@@ -28,7 +31,8 @@ def read_librarian_md() -> str:
 
 def ask(question: str) -> tuple[str, str, int]:
     conventions = read_librarian_md()
-    system = build_system_prompt(conventions)
+    skill_ctx = build_skill_context()
+    system = build_system_prompt(conventions, skill_ctx)
 
     chunks = retrieve(question, n_results=5)
     context = ""
