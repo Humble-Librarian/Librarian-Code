@@ -23,9 +23,9 @@ PINK = "#EC4899"
 
 
 def print_banner():
-    ascii_art = pyfiglet.figlet_format("librarian", font="colossal")
-    styled_art = Text(ascii_art, style=f"bold {INDIGO}")
-    tagline = Text("  a CLI coding agent with persistent project memory", style=f"italic {MUTED}")
+    ascii_art = pyfiglet.figlet_format("librarian", font="larry3d")
+    styled_art = Text(ascii_art, style="bold white")
+    tagline = Text("\n  a CLI coding agent with persistent project memory", style=f"italic {MUTED}")
 
     commands = Table(show_header=False, box=None, padding=(0, 2))
     commands.add_column(style=f"bold {CYAN}")
@@ -44,7 +44,7 @@ def print_banner():
     panel = Panel(
         banner_content,
         border_style=INDIGO,
-        padding=(1, 2),
+        padding=(1, 3),
     )
     console.print()
     console.print(panel)
