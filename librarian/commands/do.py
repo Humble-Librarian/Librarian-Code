@@ -15,44 +15,50 @@ from librarian.actions.file_ops import read_file, write_file, edit_file
 from librarian.actions.shell_ops import run_command
 from librarian.actions.safety import classify_action, RiskLevel
 
-DO_SYSTEM_PROMPT = """You are Librarian, a CLI coding agent. When given a task, respond ONLY with a JSON plan in this format:
+DO_SYSTEM_PROMPT = """You are Librarian, a CLI coding agent. When given a task, respond ONLY with a JSON plan.
 
+For CREATING new files, use this format per action:
 {
-  "reasoning": "why you are taking this approach",
-  "actions": [
-    {
-      "type": "edit_file",
-      "file": "path/to/file.py",
-      "description": "what this edit does",
-      "old_code": "exact string to find (must exist in the file)",
-      "new_code": "replacement string"
-    },
-    {
-      "type": "create_file",
-      "file": "path/to/new_file.py",
-      "description": "what this file does",
-      "content": "full file content"
-    },
-    {
-      "type": "delete_file",
-      "file": "path/to/file_or_folder",
-      "description": "what is being deleted and why"
-    },
-    {
-      "type": "shell_command",
-      "command": "pip install something",
-      "description": "install required package"
-    }
-  ]
+  "type": "create_file",
+  "file": "path/to/file.py",
+  "description": "what this file does",
+  "content": "complete file content as a string"
 }
 
-Rules:
-- Only use edit_file when modifying existing code — read the actual file content first before editing
-- old_code in edit_file must be the EXACT string from the file, including whitespace
-- Use create_file for new files
-- Use delete_file to remove files or entire folders
-- Use shell_command for terminal commands
-- Return ONLY the JSON, no markdown fences, no explanation
+For EDITING existing files:
+{
+  "type": "edit_file",
+  "file": "path/to/file.py",
+  "description": "what this edit does",
+  "old_code": "EXACT string from the file to replace",
+  "new_code": "replacement string"
+}
+
+For DELETING files or folders:
+{
+  "type": "delete_file",
+  "file": "path/to/target",
+  "description": "what is being deleted and why"
+}
+
+For SHELL commands:
+{
+  "type": "shell_command",
+  "command": "the command to run",
+  "description": "what this command does"
+}
+
+Full response format:
+{
+  "reasoning": "brief explanation of approach",
+  "actions": [ ... array of actions above ... ]
+}
+
+CRITICAL RULES:
+- For create_file: content must be the COMPLETE file, not a snippet
+- For edit_file: old_code must be EXACT text from the file (copy it precisely)
+- If creating multiple files, list each as a separate create_file action
+- Return ONLY the JSON object, no markdown fences, no extra text
 """
 
 
@@ -135,9 +141,14 @@ def run(task: str):
     print_header("librarian do")
 
     chunks = retrieve(task, n_results=7)
-    context = _format_chunks(chunks)
     conventions = read_librarian_md()
-    prompt = f"Project conventions:\n{conventions}\n\nRelevant code:\n{context}\n\nTask: {task}"
+
+    parts = [f"Project conventions:\n{conventions}"]
+    if chunks:
+        context = _format_chunks(chunks)
+        parts.append(f"Relevant code:\n{context}")
+    parts.append(f"Task: {task}")
+    prompt = "\n\n".join(parts)
 
     try:
         raw_response, provider, tokens = get_response(DO_SYSTEM_PROMPT, prompt)

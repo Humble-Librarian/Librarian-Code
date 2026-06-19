@@ -24,11 +24,15 @@ def retrieve(query: str, n_results: int = 5) -> list[dict]:
         results["metadatas"][0],
         results["distances"][0],
     ):
-        if dist > 2.0:
+        if dist > 2.5:
             continue
         chunks.append({
             "content": doc,
             "metadata": meta,
             "distance": dist,
         })
+
+    if chunks and sum(c["distance"] for c in chunks) / len(chunks) > 2.0:
+        return []
+
     return chunks
