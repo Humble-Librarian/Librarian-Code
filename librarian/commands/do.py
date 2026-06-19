@@ -15,50 +15,33 @@ from librarian.actions.file_ops import read_file, write_file, edit_file
 from librarian.actions.shell_ops import run_command
 from librarian.actions.safety import classify_action, RiskLevel
 
-DO_SYSTEM_PROMPT = """You are Librarian, a CLI coding agent. When given a task, respond ONLY with a JSON plan.
+DO_SYSTEM_PROMPT = """You are Librarian, a CLI coding agent. Respond ONLY with a JSON plan.
 
-For CREATING new files, use this format per action:
-{
-  "type": "create_file",
-  "file": "path/to/file.py",
-  "description": "what this file does",
-  "content": "complete file content as a string"
-}
+ACTION TYPES:
 
-For EDITING existing files:
-{
-  "type": "edit_file",
-  "file": "path/to/file.py",
-  "description": "what this edit does",
-  "old_code": "EXACT string from the file to replace",
-  "new_code": "replacement string"
-}
+1. create_file — for new files:
+{"type":"create_file","file":"path","description":"what","content":"COMPLETE file"}
 
-For DELETING files or folders:
-{
-  "type": "delete_file",
-  "file": "path/to/target",
-  "description": "what is being deleted and why"
-}
+2. edit_file — modify existing files:
+{"type":"edit_file","file":"path","description":"what","old_code":"EXACT text","new_code":"replacement"}
 
-For SHELL commands:
-{
-  "type": "shell_command",
-  "command": "the command to run",
-  "description": "what this command does"
-}
+3. delete_file — remove files/folders:
+{"type":"delete_file","file":"path","description":"why"}
 
-Full response format:
-{
-  "reasoning": "brief explanation of approach",
-  "actions": [ ... array of actions above ... ]
-}
+4. shell_command — run terminal commands:
+{"type":"shell_command","command":"cmd","description":"what"}
 
-CRITICAL RULES:
-- For create_file: content must be the COMPLETE file, not a snippet
-- For edit_file: old_code must be EXACT text from the file (copy it precisely)
-- If creating multiple files, list each as a separate create_file action
-- Return ONLY the JSON object, no markdown fences, no extra text
+RESPONSE FORMAT:
+{"reasoning":"approach","actions":[...]}
+
+RULES:
+- content in create_file MUST be the complete, working file — not a snippet
+- For web projects (HTML/CSS/JS): prefer a single index.html with inline <style> and <script> to avoid truncation
+- If you must use separate files, create them as separate actions
+- old_code in edit_file must match the file EXACTLY including whitespace
+- Return ONLY valid JSON — no markdown fences, no explanation, no comments
+- Keep file contents under 200 lines each to avoid truncation
+- Do NOT wrap content in markdown code blocks inside the JSON
 """
 
 
@@ -67,7 +50,21 @@ def _parse_plan(raw: str) -> dict:
     if raw.startswith("```"):
         raw = re.sub(r"^```(?:json)?\n?", "", raw)
         raw = re.sub(r"\n?```$", "", raw)
-    return json.loads(raw)
+
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        pass
+
+    last_bracket = raw.rfind("]")
+    if last_bracket == -1:
+        raise json.JSONDecodeError("No JSON array found", raw, 0)
+    truncated = raw[:last_bracket] + "]}"
+
+    try:
+        return json.loads(truncated)
+    except json.JSONDecodeError:
+        raise json.JSONDecodeError("Could not parse plan", raw, 0)
 
 
 def _format_chunks(chunks: list[dict]) -> str:
