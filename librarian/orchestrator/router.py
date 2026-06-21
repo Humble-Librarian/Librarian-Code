@@ -1,3 +1,4 @@
+from typing import Iterator
 from librarian.adapter.groq_adapter import GroqAdapter
 from librarian.adapter.openrouter_adapter import OpenRouterAdapter
 from librarian.exceptions import RateLimitError, ProviderUnavailableError
@@ -15,3 +16,15 @@ def get_response(system: str, prompt: str) -> tuple[str, str, int]:
         log_warning(f"{e} — switching to OpenRouter")
         response = fallback.complete(system, prompt)
         return response, "openrouter", fallback.tokens_used
+
+
+def get_response_stream(system: str, prompt: str) -> tuple[Iterator[str], str]:
+    primary = GroqAdapter()
+    fallback = OpenRouterAdapter()
+
+    try:
+        _ = primary.complete_stream(system, prompt)
+        return primary.complete_stream(system, prompt), "groq"
+    except (RateLimitError, ProviderUnavailableError) as e:
+        log_warning(f"{e} — switching to OpenRouter")
+        return fallback.complete_stream(system, prompt), "openrouter"

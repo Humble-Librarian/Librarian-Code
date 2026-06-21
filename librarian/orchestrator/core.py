@@ -1,6 +1,7 @@
 from pathlib import Path
 from librarian.orchestrator.router import get_response
 from librarian.memory.retriever import retrieve
+from librarian.memory import session
 from librarian.skills.loader import build_skill_context
 
 
@@ -43,5 +44,16 @@ def ask(question: str) -> tuple[str, str, int]:
             parts.append(f"--- {meta['file_path']}:{meta.get('start_line', '?')}-{meta.get('end_line', '?')} ---\n{c['content']}")
         context = "\n\n".join(parts)
 
-    prompt = f"Relevant code context:\n{context}\n\nQuestion: {question}" if context else question
-    return get_response(system, prompt)
+    history = session.format_history(max_messages=6)
+    prompt_parts = []
+    if context:
+        prompt_parts.append(f"Relevant code context:\n{context}")
+    if history:
+        prompt_parts.append(f"Previous conversation:\n{history}")
+    prompt_parts.append(f"Question: {question}")
+    prompt = "\n\n".join(prompt_parts)
+
+    session.add_message("user", question)
+    response, provider, tokens = get_response(system, prompt)
+    session.add_message("assistant", response)
+    return response, provider, tokens

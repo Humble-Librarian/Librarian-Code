@@ -1,3 +1,4 @@
+from typing import Iterator
 from groq import Groq, RateLimitError as GroqRateLimitError, APIConnectionError
 from librarian.adapter.base import LLMAdapter
 from librarian.exceptions import RateLimitError, ProviderUnavailableError
@@ -25,6 +26,28 @@ class GroqAdapter(LLMAdapter):
             )
             self.tokens_used += response.usage.total_tokens
             return response.choices[0].message.content
+        except GroqRateLimitError:
+            raise RateLimitError("Groq rate limit exceeded")
+        except APIConnectionError:
+            raise ProviderUnavailableError("Cannot connect to Groq")
+
+    def complete_stream(self, system: str, prompt: str) -> Iterator[str]:
+        if not self.client:
+            raise ProviderUnavailableError("GROQ_API_KEY not set")
+        try:
+            stream = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.2,
+                max_tokens=4096,
+                stream=True,
+            )
+            for chunk in stream:
+                if chunk.choices[0].delta.content:
+                    yield chunk.choices[0].delta.content
         except GroqRateLimitError:
             raise RateLimitError("Groq rate limit exceeded")
         except APIConnectionError:

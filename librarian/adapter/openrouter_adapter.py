@@ -1,3 +1,5 @@
+import json
+from typing import Iterator
 import httpx
 from librarian.adapter.base import LLMAdapter
 from librarian.exceptions import RateLimitError, ProviderUnavailableError
@@ -41,6 +43,42 @@ class OpenRouterAdapter(LLMAdapter):
             if not choices or "message" not in choices[0]:
                 raise ProviderUnavailableError("Invalid API response format")
             return choices[0]["message"]["content"]
+        except httpx.ConnectError:
+            raise ProviderUnavailableError("Cannot connect to OpenRouter")
+        except httpx.TimeoutException:
+            raise ProviderUnavailableError("OpenRouter request timed out")
+
+    def complete_stream(self, system: str, prompt: str) -> Iterator[str]:
+        if not self.api_key:
+            raise ProviderUnavailableError("OPENROUTER_API_KEY not set")
+        headers = {**HEADERS, "Authorization": f"Bearer {self.api_key}"}
+        payload = {
+            "model": MODEL,
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": prompt},
+            ],
+            "temperature": 0.2,
+            "max_tokens": 4096,
+            "stream": True,
+        }
+        try:
+            with httpx.Client(timeout=60) as client:
+                with client.stream("POST", ENDPOINT, headers=headers, json=payload) as resp:
+                    if resp.status_code == 429:
+                        raise RateLimitError("OpenRouter rate limit exceeded")
+                    resp.raise_for_status()
+                    for line in resp.iter_lines():
+                        if line.startswith("data: "):
+                            data_str = line[6:]
+                            if data_str.strip() == "[DONE]":
+                                break
+                            try:
+                                data = json.loads(data_str)
+                                if data.get("choices") and data["choices"][0].get("delta", {}).get("content"):
+                                    yield data["choices"][0]["delta"]["content"]
+                            except json.JSONDecodeError:
+                                continue
         except httpx.ConnectError:
             raise ProviderUnavailableError("Cannot connect to OpenRouter")
         except httpx.TimeoutException:

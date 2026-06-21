@@ -95,3 +95,32 @@ def spinner(description: str):
         TextColumn(f"[{MUTED}]{description}[/{MUTED}]"),
         transient=True,
     )
+
+
+def print_stream(iterator, style: str = ""):
+    from rich.live import Live
+    from rich.text import Text
+
+    text = Text("", style=style)
+    with Live(text, console=console, refresh_per_second=10) as live:
+        for token in iterator:
+            text.append(token)
+            live.refresh()
+    return str(text)
+
+
+def print_diff(file_path: str, old_content: str, new_content: str):
+    from rich.syntax import Syntax
+    import difflib
+
+    old_lines = old_content.splitlines(keepends=True)
+    new_lines = new_content.splitlines(keepends=True)
+    diff = list(difflib.unified_diff(old_lines, new_lines, fromfile=f"a/{file_path}", tofile=f"b/{file_path}"))
+
+    if not diff:
+        return
+
+    diff_text = "".join(diff)
+    console.print(f"\n[bold {INDIGO}]diff:[/bold {INDIGO}] {file_path}")
+    syntax = Syntax(diff_text, "diff", theme="monokai", line_numbers=False)
+    console.print(Panel(syntax, border_style=INDIGO, padding=(0, 1)))

@@ -5,6 +5,7 @@ from pathlib import Path
 from librarian.utils.ui import (
     print_header, print_warning, print_success, print_muted,
     print_panel, confirm_action, console, INDIGO, WARNING, SUCCESS,
+    print_diff,
 )
 from librarian.utils.token_tracker import tracker
 from librarian.orchestrator.core import read_librarian_md, build_system_prompt
@@ -94,6 +95,28 @@ def _show_plan(plan: dict, task: str):
             action.get("description", "—"),
         )
     console.print(table)
+
+
+def _preview_action(action: dict):
+    action_type = action.get("type")
+    if action_type == "edit_file":
+        path = Path(action["file"])
+        if path.exists():
+            content = read_file(action["file"])
+            if action["old_code"] in content:
+                new_content = content.replace(action["old_code"], action["new_code"], 1)
+                print_diff(action["file"], content, new_content)
+    elif action_type == "create_file":
+        path = Path(action["file"])
+        if path.exists():
+            old_content = read_file(action["file"])
+            print_diff(action["file"], old_content, action.get("content", ""))
+        else:
+            console.print(f"\n[bold {INDIGO}]new file:[/bold {INDIGO}] {action['file']}")
+            from rich.syntax import Syntax
+            content = action.get("content", "")
+            syntax = Syntax(content, Path(action["file"]).suffix.lstrip(".") or "text", theme="monokai")
+            console.print(Panel(syntax, border_style=INDIGO, padding=(0, 1)))
 
 
 def _execute_action(action: dict) -> dict:
@@ -191,6 +214,10 @@ def run(task: str):
         return
 
     _show_plan(plan, task)
+
+    print_muted("\n  preview of changes:")
+    for action in plan.get("actions", []):
+        _preview_action(action)
 
     if not confirm_action("proceed with execution?"):
         print_muted("  cancelled")
