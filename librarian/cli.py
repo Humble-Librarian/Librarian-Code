@@ -1,6 +1,6 @@
 import typer
 from librarian.commands import init, ask, do, why, undo, status
-from librarian.utils.ui import print_banner, print_muted
+from librarian.utils.ui import print_banner, print_muted, print_warning
 
 app = typer.Typer(
     name="librarian",

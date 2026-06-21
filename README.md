@@ -11,15 +11,28 @@ Built without LangChain — pure Python, owned stack. Every file operation, ever
 ## install
 
 ```bash
-pip install librarian-code
+pip install -g librarian-code
 ```
 
-Set up your API keys:
+## setup
+
+You need at least one free API key:
+
+| Provider | Get Key | Cost |
+|----------|---------|------|
+| **Groq** | https://console.groq.com | Free tier available |
+| **OpenRouter** | https://openrouter.ai | Free models available |
+
+Create `.env` in your project root:
 
 ```bash
-# create .env file with your keys
+# option 1: groq (fast)
 echo "GROQ_API_KEY=gsk_..." > .env
-echo "OPENROUTER_API_KEY=sk-or-..." >> .env
+
+# option 2: openrouter
+echo "OPENROUTER_API_KEY=sk-or-..." > .env
+
+# or both (openrouter used as fallback)
 ```
 
 ## quick start
