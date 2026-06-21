@@ -1,20 +1,26 @@
-# librarian
+<p align="center">
+  <strong>Librarian — a CLI coding agent with persistent project memory</strong>
+</p>
 
-> a CLI coding agent that remembers your project
+<p align="center">
+  <a href="https://github.com/Humble-Librarian/Librarian-Code/actions"><img src="https://img.shields.io/github/actions/workflow/status/Humble-Librarian/Librarian-Code/ci.yml?branch=main&style=for-the-badge" alt="CI status"></a>
+  <a href="https://pypi.org/project/librarian-code/"><img src="https://img.shields.io/pypi/v/librarian-code?include_prereleases&style=for-the-badge" alt="PyPI version"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="MIT License"></a>
+</p>
 
-## what it does differently
+**Librarian** is a _local-first CLI coding agent_ you run on your own machine. It remembers your project's decisions, learns from your feedback, and routes between LLM providers intelligently. Unlike tools that call an LLM on every request regardless of confidence, Librarian builds a capsule-based memory of your project — remembering why edits were made, adjusting confidence over time, and switching providers when rate limits hit.
 
-Librarian is a local-first CLI coding agent with persistent project memory. Unlike tools that call an LLM on every request regardless of confidence, Librarian builds a capsule-based memory of your project's decisions — remembering why edits were made, adjusting confidence over time, and routing between Groq and OpenRouter intelligently when rate limits hit.
+If you want a CLI coding agent that feels local, fast, and always improving, this is it.
 
-Built without LangChain — pure Python, owned stack. Every file operation, every LLM call, every decision is transparent and logged.
+[PyPI](https://pypi.org/project/librarian-code/) · [GitHub](https://github.com/Humble-Librarian/Librarian-Code) · [License](LICENSE)
 
-## install
+## Install
 
 ```bash
 pip install -g librarian-code
 ```
 
-## setup
+## Setup
 
 You need at least one free API key:
 
@@ -35,7 +41,7 @@ echo "OPENROUTER_API_KEY=sk-or-..." > .env
 # or both (openrouter used as fallback)
 ```
 
-## quick start
+## Quick start
 
 ```bash
 librarian init                         # index your project
@@ -47,7 +53,22 @@ librarian undo                         # revert last action
 librarian status                       # project overview
 ```
 
-## commands
+## Highlights
+
+- **[Capsule-based memory](#how-memory-works)** — learns from your feedback over time, actions you approve become more confident
+- **[Streaming output](#features)** — responses stream token-by-token, no waiting
+- **[Diff preview](#features)** — see syntax-highlighted diffs before executing changes
+- **[Multi-turn conversation](#features)** — ask follow-up questions, Librarian remembers context
+- **[File targeting](#features)** — scope queries to specific files for precise results
+- **[Auto verification](#features)** — runs tests/lint after changes to catch regressions
+- **[Git integration](#git-commands)** — commit, push, diff from the CLI
+- **[Custom skills](#skills)** — add your own project-specific conventions
+- **[Interactive REPL](#features)** — persistent session for exploratory workflows
+- **[Dual LLM providers](#providers)** — Groq primary, OpenRouter fallback on rate limits
+
+## Commands
+
+### Core
 
 | command | what it does |
 |---------|-------------|
@@ -59,7 +80,7 @@ librarian status                       # project overview
 | `librarian undo` | reverts the last agent action |
 | `librarian status` | shows project info, memory stats, token usage |
 
-### git commands
+### Git
 
 | command | what it does |
 |---------|-------------|
@@ -68,34 +89,34 @@ librarian status                       # project overview
 | `librarian git diff` | show current diff |
 | `librarian git status` | show git status |
 
-### skill commands
+### Skills
 
 | command | what it does |
 |---------|-------------|
 | `librarian skill list` | list bundled and custom skills |
 | `librarian skill add <name>` | add a custom skill from stdin or file |
 
-### options
+### Options
 
 | flag | works with | what it does |
 |------|------------|-------------|
 | `--file` | `ask`, `do` | scope retrieval to a specific file |
 
-## features
+## Features
 
-### streaming output
+### Streaming output
 
 LLM responses stream token-by-token — no more waiting for the full response.
 
-### diff preview
+### Diff preview
 
 Before executing changes, see a syntax-highlighted diff of exactly what will change.
 
-### multi-turn conversation
+### Multi-turn conversation
 
 Ask follow-up questions — Librarian remembers context within a session.
 
-### file targeting
+### File targeting
 
 Scope your query to a specific file for more precise results:
 
@@ -104,15 +125,15 @@ librarian ask "what does this function do?" --file src/auth.py
 librarian do "fix the bug" --file src/user.py
 ```
 
-### auto verification
+### Auto verification
 
 After executing changes, Librarian automatically runs tests and linting to catch regressions.
 
-### capsule feedback
+### Capsule feedback
 
 Your approve/undo signals feed back into retrieval ranking — files you approve get boosted, files you undo get penalized.
 
-### custom skills
+### Custom skills
 
 Add your own project-specific conventions:
 
@@ -121,7 +142,7 @@ librarian skill add my-stack
 # type your conventions, then Ctrl+D
 ```
 
-## how memory works
+## How memory works
 
 Librarian uses a **capsule-based memory system**:
 
@@ -133,18 +154,20 @@ Librarian uses a **capsule-based memory system**:
 
 This means Librarian learns from your feedback over time — actions you approve become more confident, actions you undo become less likely to be repeated.
 
-## skills
+## Skills
 
 Librarian auto-detects your project type and loads relevant conventions:
 
-- **python**: pyproject.toml, setup.py, requirements.txt
-- **react**: next.config.*, .tsx/.jsx files
-- **web-dev**: .html files, CSS/SCSS
-- **api-design**: routes.py, models.py, schemas.py
+| Skill | Trigger |
+|-------|---------|
+| **python** | pyproject.toml, setup.py, requirements.txt |
+| **react** | next.config.*, .tsx/.jsx files |
+| **web-dev** | .html files, CSS/SCSS |
+| **api-design** | routes.py, models.py, schemas.py |
 
 Skills provide domain-specific best practices that are injected into the LLM context for more relevant suggestions.
 
-## configuration
+## Configuration
 
 Create `librarian.toml` in your project root to customize behavior:
 
@@ -156,7 +179,7 @@ distance_threshold = 2.5
 auto_verify = true
 ```
 
-## architecture
+## Architecture
 
 ```
 librarian/
@@ -201,31 +224,35 @@ librarian/
 └── exceptions.py     # custom exception types
 ```
 
-## providers
+## Providers
 
 - **Groq** (primary): `llama-3.3-70b-versatile`, fast inference
 - **OpenRouter** (fallback): `qwen/qwen3-coder:free`, automatic on rate limit
 
-## security
+## Security
 
 - Shell commands use `shell=False` with argument lists to prevent injection
 - File operations use proper context managers to prevent handle leaks
 - API responses validated before access
 - LLM-generated delete operations require confirmation
 
-## performance
+## Performance
 
 - SentenceTransformer model cached as singleton (~2-3s saved per invocation)
 - ChromaDB client reused across calls
 - Project type detection cached with `@lru_cache`
 - Heavy dependencies lazy-loaded at function call time
 
-## testing
+## Testing
 
 ```bash
 python -m pytest tests/ -v
 ```
 
-## license
+## License
 
 MIT
+
+---
+
+Built by [Neel Sorathiya](https://github.com/Humble-Librarian) and the community.
