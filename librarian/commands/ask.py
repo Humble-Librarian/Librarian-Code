@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional
 from librarian.utils.ui import print_header, print_warning, print_panel, print_muted
 from librarian.utils.token_tracker import tracker
 from librarian.orchestrator.core import ask as ask_llm
@@ -18,7 +19,7 @@ def _check_api_keys():
     return True
 
 
-def run(task: str):
+def run(task: str, file: Optional[str] = None):
     if not Path(".librarian").exists():
         print_header("librarian ask")
         print_warning("project not initialised — run 'librarian init' first")
@@ -30,13 +31,13 @@ def run(task: str):
     print_header("librarian ask")
 
     try:
-        chunks = retrieve(task, n_results=5)
+        chunks = retrieve(task, n_results=5, file_filter=file)
         sources = []
         for c in chunks:
             meta = c["metadata"]
             sources.append(f"{meta['file_path']}:{meta.get('start_line', '?')}-{meta.get('end_line', '?')}")
 
-        response, provider, tokens = ask_llm(task)
+        response, provider, tokens = ask_llm(task, file_filter=file)
         tracker.add(provider, tokens)
         print_panel(response, title="answer")
         if sources:

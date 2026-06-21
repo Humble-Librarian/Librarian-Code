@@ -15,6 +15,7 @@ from librarian.memory import capsule, decision_log
 from librarian.actions.file_ops import read_file, write_file, edit_file
 from librarian.actions.shell_ops import run_command
 from librarian.actions.safety import classify_action, RiskLevel
+from librarian.actions.verify import verify_changes
 from librarian.skills.loader import build_skill_context
 
 DO_SYSTEM_PROMPT = """You are Librarian, a CLI coding agent. Respond ONLY with a JSON plan.
@@ -178,7 +179,7 @@ def _check_api_keys():
     return True
 
 
-def run(task: str):
+def run(task: str, file: str = None):
     if not Path(".librarian").exists():
         print_header("librarian do")
         print_warning("project not initialised — run 'librarian init' first")
@@ -189,7 +190,7 @@ def run(task: str):
 
     print_header("librarian do")
 
-    chunks = retrieve(task, n_results=7)
+    chunks = retrieve(task, n_results=7, file_filter=file)
     conventions = read_librarian_md()
     skill_ctx = build_skill_context()
 
@@ -242,6 +243,14 @@ def run(task: str):
             print_success(f"done: {action.get('description', '?')}")
         except Exception as e:
             print_warning(f"failed: {action.get('description', '?')} — {e}")
+
+    if results and files_changed:
+        print_muted("\n  verifying changes...")
+        ok, msg = verify_changes()
+        if not ok:
+            print_warning(f"verification failed:\n{msg}")
+        else:
+            print_success("all checks passed")
 
     decision_log.append({
         "command": "do",

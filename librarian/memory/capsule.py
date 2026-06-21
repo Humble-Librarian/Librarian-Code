@@ -92,3 +92,12 @@ def _archive_low_confidence():
 
 def get_all() -> list[dict]:
     return _load()
+
+
+def get_file_confidence(file_path: str) -> float:
+    capsules = _load()
+    relevant = [c for c in capsules if c.get("file") == file_path]
+    if not relevant:
+        return 1.0
+    avg = sum(c["confidence"] for c in relevant) / len(relevant)
+    return max(avg, 0.1)

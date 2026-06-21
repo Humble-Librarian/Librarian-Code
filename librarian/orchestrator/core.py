@@ -30,12 +30,12 @@ def read_librarian_md() -> str:
     return "No project conventions file found."
 
 
-def ask(question: str) -> tuple[str, str, int]:
+def ask(question: str, file_filter: str = None) -> tuple[str, str, int]:
     conventions = read_librarian_md()
     skill_ctx = build_skill_context()
     system = build_system_prompt(conventions, skill_ctx)
 
-    chunks = retrieve(question, n_results=5)
+    chunks = retrieve(question, n_results=5, file_filter=file_filter)
     context = ""
     if chunks:
         parts = []
