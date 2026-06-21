@@ -2,8 +2,6 @@ import json
 import os
 import re
 from pathlib import Path
-from sentence_transformers import SentenceTransformer
-import chromadb
 from librarian.actions.file_ops import list_files
 from librarian.memory.chunker import chunk_file
 from librarian.utils.config import CHROMA_PERSIST_DIR, EMBED_MODEL
@@ -17,6 +15,25 @@ CHUNK_EXTENSIONS = [
 
 META_FILE = ".librarian/index_meta.json"
 
+_model = None
+_client = None
+
+
+def _get_model():
+    global _model
+    if _model is None:
+        from sentence_transformers import SentenceTransformer
+        _model = SentenceTransformer(EMBED_MODEL)
+    return _model
+
+
+def _get_client():
+    global _client
+    if _client is None:
+        import chromadb
+        _client = chromadb.PersistentClient(path=CHROMA_PERSIST_DIR)
+    return _client
+
 
 def _sanitize_collection_name(name: str) -> str:
     name = re.sub(r"[^a-zA-Z0-9_\-\.\s]", "", name)
@@ -27,8 +44,8 @@ def _sanitize_collection_name(name: str) -> str:
 
 
 def index_project():
-    model = SentenceTransformer(EMBED_MODEL)
-    client = chromadb.PersistentClient(path=CHROMA_PERSIST_DIR)
+    model = _get_model()
+    client = _get_client()
     project_name = _sanitize_collection_name(os.path.basename(os.getcwd()))
     collection = client.get_or_create_collection(name=project_name)
 

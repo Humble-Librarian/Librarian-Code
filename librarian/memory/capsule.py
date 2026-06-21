@@ -1,5 +1,6 @@
 import json
 import uuid
+import hashlib
 import os
 from datetime import datetime, timezone
 from pathlib import Path
@@ -23,7 +24,7 @@ def create(task: str, reasoning: str, files_changed: list[str] = None):
     capsules = _load()
     capsule = {
         "id": str(uuid.uuid4()),
-        "project_id": str(hash(os.getcwd())),
+        "project_id": hashlib.sha256(os.getcwd().encode()).hexdigest()[:16],
         "file": (files_changed or [""])[0],
         "decision": task,
         "reason": reasoning,

@@ -37,7 +37,10 @@ class OpenRouterAdapter(LLMAdapter):
             resp.raise_for_status()
             data = resp.json()
             self.tokens_used += data.get("usage", {}).get("total_tokens", 0)
-            return data["choices"][0]["message"]["content"]
+            choices = data.get("choices", [])
+            if not choices or "message" not in choices[0]:
+                raise ProviderUnavailableError("Invalid API response format")
+            return choices[0]["message"]["content"]
         except httpx.ConnectError:
             raise ProviderUnavailableError("Cannot connect to OpenRouter")
         except httpx.TimeoutException:

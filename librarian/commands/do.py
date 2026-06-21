@@ -130,7 +130,7 @@ def _execute_action(action: dict) -> dict:
             import re as _re
             paths = _re.findall(r"(?:^|\s)(\S+)", cmd.replace("rm ", "", 1))
             for p in paths:
-                p = p.strip("-rf").strip()
+                p = p.lstrip("-").lstrip("r").lstrip("f").strip()
                 target = Path(p)
                 if target.is_dir():
                     shutil.rmtree(target)

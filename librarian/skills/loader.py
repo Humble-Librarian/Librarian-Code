@@ -2,11 +2,13 @@
 
 import os
 import json
+import functools
 from pathlib import Path
 
 SKILLS_DIR = Path(__file__).parent / "bundled"
 
 
+@functools.lru_cache(maxsize=1)
 def _detect_project_type() -> list[str]:
     cwd = Path.cwd()
     detected = []

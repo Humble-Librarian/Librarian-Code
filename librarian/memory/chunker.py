@@ -7,9 +7,11 @@ from datetime import datetime, timezone
 def chunk_file(path: str) -> list[dict]:
     ext = os.path.splitext(path)[1].lower()
     try:
-        content = open(path, encoding="utf-8").read()
+        with open(path, encoding="utf-8") as f:
+            content = f.read()
     except UnicodeDecodeError:
-        content = open(path, encoding="latin-1").read()
+        with open(path, encoding="latin-1") as f:
+            content = f.read()
 
     if ext == ".py":
         return _chunk_python(path, content)
