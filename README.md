@@ -55,6 +55,17 @@ Librarian uses a **capsule-based memory system**:
 
 This means Librarian learns from your feedback over time — actions you approve become more confident, actions you undo become less likely to be repeated.
 
+## skills
+
+Librarian auto-detects your project type and loads relevant conventions:
+
+- **python**: pyproject.toml, setup.py, requirements.txt
+- **react**: next.config.*, .tsx/.jsx files
+- **web-dev**: .html files, CSS/SCSS
+- **api-design**: routes.py, models.py, schemas.py
+
+Skills provide domain-specific best practices that are injected into the LLM context for more relevant suggestions.
+
 ## architecture
 
 ```
@@ -69,12 +80,15 @@ librarian/
 ├── memory/           # persistent project memory
 │   ├── chunker.py    # AST-based code splitting
 │   ├── indexer.py    # ChromaDB + sentence-transformers
-│   ├── retriever.py  # semantic search
+│   ├── retriever.py  # semantic search (cached model)
 │   ├── capsule.py    # decision memory with confidence
 │   └── decision_log.py  # append-only action log
+├── skills/           # auto-detected project conventions
+│   ├── loader.py     # project type detection with caching
+│   └── bundled/      # skill convention files
 ├── actions/          # file and shell operations
 │   ├── file_ops.py   # read, write, edit files
-│   ├── shell_ops.py  # git and shell commands
+│   ├── shell_ops.py  # git and shell commands (shell=False)
 │   └── safety.py     # risk classification
 ├── commands/         # CLI commands
 │   ├── init.py
@@ -96,6 +110,20 @@ librarian/
 
 - **Groq** (primary): `llama-3.3-70b-versatile`, fast inference
 - **OpenRouter** (fallback): `qwen/qwen3-coder:free`, automatic on rate limit
+
+## security
+
+- Shell commands use `shell=False` with argument lists to prevent injection
+- File operations use proper context managers to prevent handle leaks
+- API responses validated before access
+- LLM-generated delete operations require confirmation
+
+## performance
+
+- SentenceTransformer model cached as singleton (~2-3s saved per invocation)
+- ChromaDB client reused across calls
+- Project type detection cached with `@lru_cache`
+- Heavy dependencies lazy-loaded at function call time
 
 ## testing
 
