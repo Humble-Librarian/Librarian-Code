@@ -6,6 +6,7 @@ import functools
 from pathlib import Path
 
 SKILLS_DIR = Path(__file__).parent / "bundled"
+CUSTOM_SKILLS_DIR = Path(".librarian/skills")
 
 
 @functools.lru_cache(maxsize=1)
@@ -82,6 +83,12 @@ def _detect_project_type() -> list[str]:
 
 
 def load_skill(skill_name: str) -> str | None:
+    custom_dir = CUSTOM_SKILLS_DIR / skill_name
+    if custom_dir.exists():
+        conventions_file = custom_dir / "conventions.md"
+        if conventions_file.exists():
+            return conventions_file.read_text(encoding="utf-8")
+
     skill_dir = SKILLS_DIR / skill_name
     if not skill_dir.exists():
         return None
@@ -89,6 +96,32 @@ def load_skill(skill_name: str) -> str | None:
     if conventions_file.exists():
         return conventions_file.read_text(encoding="utf-8")
     return None
+
+
+def add_skill(skill_name: str, content: str):
+    CUSTOM_SKILLS_DIR.mkdir(parents=True, exist_ok=True)
+    skill_dir = CUSTOM_SKILLS_DIR / skill_name
+    skill_dir.mkdir(exist_ok=True)
+    (skill_dir / "conventions.md").write_text(content, encoding="utf-8")
+
+
+def list_skills() -> list[dict]:
+    skills = []
+
+    for skill_dir in SKILLS_DIR.iterdir():
+        if skill_dir.is_dir():
+            conventions = skill_dir / "conventions.md"
+            if conventions.exists():
+                skills.append({"name": skill_dir.name, "source": "bundled"})
+
+    if CUSTOM_SKILLS_DIR.exists():
+        for skill_dir in CUSTOM_SKILLS_DIR.iterdir():
+            if skill_dir.is_dir():
+                conventions = skill_dir / "conventions.md"
+                if conventions.exists():
+                    skills.append({"name": skill_dir.name, "source": "custom"})
+
+    return skills
 
 
 def get_relevant_skills() -> list[str]:
