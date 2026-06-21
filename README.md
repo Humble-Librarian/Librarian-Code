@@ -11,14 +11,15 @@ Built without LangChain — pure Python, owned stack. Every file operation, ever
 ## install
 
 ```bash
-pip install -e .
+pip install librarian-code
 ```
 
 Set up your API keys:
 
 ```bash
-cp .env.example .env
-# edit .env with your keys
+# create .env file with your keys
+echo "GROQ_API_KEY=gsk_..." > .env
+echo "OPENROUTER_API_KEY=sk-or-..." >> .env
 ```
 
 ## quick start

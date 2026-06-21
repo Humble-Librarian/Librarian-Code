@@ -2,7 +2,20 @@
 name = "librarian-code"
 version = "0.1.0"
 description = "A local-first CLI coding agent with persistent project memory"
+readme = "README.md"
+license = "MIT"
+authors = [{name = "Neel Sorathiya"}]
 requires-python = ">=3.10"
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Code Generators",
+]
 dependencies = [
     "typer>=0.12.0",
     "rich>=13.0.0",
@@ -15,11 +28,17 @@ dependencies = [
     "pyfiglet>=1.0.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/Humble-Librarian/Librarian-Code"
+Repository = "https://github.com/Humble-Librarian/Librarian-Code"
+Issues = "https://github.com/Humble-Librarian/Librarian-Code/issues"
+
 [project.scripts]
 librarian = "librarian.cli:app"
 
 [tool.hatch.build.targets.wheel]
 packages = ["librarian"]
+artifacts = ["librarian/skills/bundled/**/*.md"]
 
 [build-system]
 requires = ["hatchling"]
