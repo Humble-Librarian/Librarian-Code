@@ -2,6 +2,7 @@ import json
 import re
 import shutil
 from pathlib import Path
+from rich.panel import Panel
 from librarian.utils.ui import (
     print_header, print_warning, print_success, print_muted,
     print_panel, confirm_action, console, INDIGO, WARNING, SUCCESS,
@@ -151,10 +152,9 @@ def _execute_action(action: dict) -> dict:
     elif action_type == "shell_command":
         cmd = action["command"]
         if cmd.strip().startswith("rm "):
-            import re as _re
-            paths = _re.findall(r"(?:^|\s)(\S+)", cmd.replace("rm ", "", 1))
+            parts = cmd.strip().split()[1:]
+            paths = [p for p in parts if not p.startswith("-")]
             for p in paths:
-                p = p.lstrip("-").lstrip("r").lstrip("f").strip()
                 target = Path(p)
                 if target.is_dir():
                     shutil.rmtree(target)
@@ -162,7 +162,9 @@ def _execute_action(action: dict) -> dict:
                     target.unlink()
             return {"type": "shell_command", "command": cmd, "status": "done"}
         code, out, err = run_command(cmd)
-        return {"type": "shell_command", "command": cmd, "status": "done" if code == 0 else f"exit {code}"}
+        if code != 0:
+            raise RuntimeError(f"command failed (exit {code}): {err.strip()}")
+        return {"type": "shell_command", "command": cmd, "status": "done"}
     return {"type": action_type, "status": "unknown"}
 
 
@@ -224,13 +226,24 @@ def run(task: str, file: str = None):
         print_muted("  cancelled")
         return
 
+    snapshot: dict[str, str | None] = {}
+    for action in plan.get("actions", []):
+        if "file" in action:
+            path = Path(action["file"])
+            if path.exists():
+                snapshot[action["file"]] = path.read_text(encoding="utf-8")
+            else:
+                snapshot[action["file"]] = None
+
     results = []
     files_changed = []
     for action in plan.get("actions", []):
-        risk_text = action.get("description", "") + " " + action.get("command", "") + " " + action.get("file", "")
-        if action.get("type") in ("delete_file",):
-            risk_text += " delete"
-        risk = classify_action(risk_text)
+        if action.get("type") == "delete_file":
+            risk = RiskLevel.CONFIRM
+        elif action.get("type") == "shell_command":
+            risk = classify_action(action.get("command", ""))
+        else:
+            risk = RiskLevel.SAFE
         if risk == RiskLevel.CONFIRM:
             if not confirm_action(f"execute: {action.get('description', '?')}"):
                 print_muted(f"  skipped: {action.get('description', '?')}")
@@ -243,10 +256,19 @@ def run(task: str, file: str = None):
             print_success(f"done: {action.get('description', '?')}")
         except Exception as e:
             print_warning(f"failed: {action.get('description', '?')} — {e}")
+            for file_path, original in snapshot.items():
+                p = Path(file_path)
+                if original is None:
+                    if p.exists():
+                        p.unlink()
+                else:
+                    p.write_text(original, encoding="utf-8")
+            print_warning("restored files to pre-execution state")
+            break
 
     if results and files_changed:
         print_muted("\n  verifying changes...")
-        ok, msg = verify_changes()
+        ok, msg = verify_changes(files_changed=files_changed)
         if not ok:
             print_warning(f"verification failed:\n{msg}")
         else:

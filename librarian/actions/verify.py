@@ -13,9 +13,10 @@ def run_tests() -> tuple[bool, str]:
     return True, "no test runner detected"
 
 
-def run_lint() -> tuple[bool, str]:
+def run_lint(files_changed: list[str] = None) -> tuple[bool, str]:
     if Path("pyproject.toml").exists():
-        code, out, err = run_command("python -m ruff check .")
+        targets = " ".join(files_changed) if files_changed else "."
+        code, out, err = run_command(f"python -m ruff check {targets}")
         if code != 0 and "No module named 'ruff'" in err:
             return True, "ruff not installed"
         return code == 0, out + err
@@ -25,8 +26,8 @@ def run_lint() -> tuple[bool, str]:
     return True, "no linter detected"
 
 
-def verify_changes() -> tuple[bool, str]:
-    lint_ok, lint_out = run_lint()
+def verify_changes(files_changed: list[str] = None) -> tuple[bool, str]:
+    lint_ok, lint_out = run_lint(files_changed)
     tests_ok, tests_out = run_tests()
 
     parts = []
