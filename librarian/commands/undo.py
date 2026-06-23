@@ -20,8 +20,9 @@ def _undo_edit_file(action: dict):
             content = content.replace(new_code, old_code, 1)
             write_file(path, content)
             return True
-    except Exception:
-        pass
+    except Exception as e:
+        from librarian.utils.logger import log_warning
+        log_warning(f"failed to undo {path}: {e}")
     return False
 
 

@@ -66,8 +66,9 @@ def _detect_project_type() -> list[str]:
                     for dep in config.get("package_deps", []):
                         if dep in deps:
                             score += 5
-                except Exception:
-                    pass
+                except Exception as e:
+                    from librarian.utils.logger import log_warning
+                    log_warning(f"failed to parse package.json for skill detection: {e}")
 
         if skill_name == "python":
             if (cwd / "pyproject.toml").exists():

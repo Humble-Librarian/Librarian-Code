@@ -30,7 +30,9 @@ def retrieve(query: str, n_results: int = 5, file_filter: str = None) -> list[di
 
     try:
         collection = client.get_collection(name=project_name)
-    except Exception:
+    except Exception as e:
+        from librarian.utils.logger import log_warning
+        log_warning(f"failed to access memory collection: {e}")
         return []
 
     query_embedding = model.encode([query]).tolist()

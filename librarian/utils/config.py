@@ -19,7 +19,9 @@ def _load_toml_defaults():
     try:
         from librarian.utils.toml_config import get_config_value
         return get_config_value("model", EMBED_MODEL)
-    except Exception:
+    except Exception as e:
+        from librarian.utils.logger import log_warning
+        log_warning(f"failed to load TOML config: {e}")
         return EMBED_MODEL
 
 
