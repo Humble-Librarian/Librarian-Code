@@ -237,6 +237,7 @@ def run(task: str, file: str = None):
 
     results = []
     files_changed = []
+    ran_shell_cmds = []
     for action in plan.get("actions", []):
         if action.get("type") == "delete_file":
             risk = RiskLevel.CONFIRM
@@ -248,6 +249,10 @@ def run(task: str, file: str = None):
             if not confirm_action(f"execute: {action.get('description', '?')}"):
                 print_muted(f"  skipped: {action.get('description', '?')}")
                 continue
+        
+        if action.get("type") == "shell_command":
+            ran_shell_cmds.append(action.get("command", ""))
+        
         try:
             result = _execute_action(action)
             results.append(result)
@@ -264,6 +269,10 @@ def run(task: str, file: str = None):
                 else:
                     p.write_text(original, encoding="utf-8")
             print_warning("restored files to pre-execution state")
+            if ran_shell_cmds:
+                print_warning("note: these shell commands cannot be auto-reverted:")
+                for cmd in ran_shell_cmds:
+                    print_muted(f"  $ {cmd}")
             break
 
     if results and files_changed:
