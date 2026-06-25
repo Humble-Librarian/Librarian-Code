@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://github.com/Humble-Librarian/Librarian-Code/actions"><img src="https://img.shields.io/github/actions/workflow/status/Humble-Librarian/Librarian-Code/ci.yml?branch=main&style=for-the-badge" alt="CI status"></a>
-  <a href="https://pypi.org/project/librarian-code/"><img src="https://img.shields.io/pypi/v/librarian-code?include_prereleases&style=for-the-badge" alt="PyPI version"></a>
+  <a href="https://pypi.org/project/librarian-code/"><img src="https://img.shields.io/pypi/v/librarian-code?style=for-the-badge&cacheSeconds=0" alt="PyPI version"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="MIT License"></a>
 </p>
 
