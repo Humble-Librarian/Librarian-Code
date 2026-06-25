@@ -129,6 +129,10 @@ librarian do "fix the bug" --file src/user.py
 
 After executing changes, Librarian automatically runs tests and linting to catch regressions.
 
+### Rollback on failure
+
+If any action fails mid-plan, all previously modified files are automatically restored to their pre-execution state. Shell commands that already ran are logged with a warning since they cannot be auto-reverted.
+
 ### Capsule feedback
 
 Your approve/undo signals feed back into retrieval ranking — files you approve get boosted, files you undo get penalized.
@@ -235,6 +239,7 @@ librarian/
 - File operations use proper context managers to prevent handle leaks
 - API responses validated before access
 - LLM-generated delete operations require confirmation
+- Mid-plan rollback restores files on failure, preventing partial edits
 
 ## Performance
 
@@ -248,6 +253,8 @@ librarian/
 ```bash
 python -m pytest tests/ -v
 ```
+
+Tests cover rollback behavior, risk classification, plan parsing, and all five bug regressions (Panel import, rm flag stripping, action classification, scoped verification, shell failure handling).
 
 ## License
 
